@@ -1,0 +1,30 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Check out source code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/aesakif/test_project.git/'
+            }
+        }
+
+        stage('Building java code with maven') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Docker build') {
+            steps {
+                sh 'docker build -t akif0agi/aes_test_java:$BUILD_NUMBER'
+            }
+        }
+        stage('DockerHub login + push') {
+            steps {
+                sh 'echo 'DockerhubAgi.' | docker login --username akif0agi --password-stdin'
+                sh 'docker push akif0agi/aes_test_java:$BUILD_NUMBER'
+                sh 'docker logout'
+            }
+        }
+    }
+}
