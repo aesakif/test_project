@@ -1,5 +1,16 @@
 pipeline {
     agent any
+    tools {
+        maven 'mvn'
+        jdk 'java11'
+    }
+
+    environment {
+        BUILD_ID = "$BUILD_NUMBER"
+        DOCKERHUB_USERNAME = "akif0agi"
+        DOCKERHUB_REPO = "aes_test_java"
+
+    }
 
     stages {
         stage('Check out source code') {
@@ -16,15 +27,18 @@ pipeline {
 
         stage('Docker build') {
             steps {
-                sh 'docker build -t akif0agi/aes_test_java:$BUILD_NUMBER'
+                sh 'docker build -t ${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:${BUILD_ID} .'
             }
         }
         stage('DockerHub login + push') {
             steps {
-                sh 'echo 'DockerhubAgi.' | docker login --username akif0agi --password-stdin'
-                sh 'docker push akif0agi/aes_test_java:$BUILD_NUMBER'
-                sh 'docker logout'
+                
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'passwd', usernameVariable: 'username')]) {
+                        sh "echo $passwd | docker login --username $username --password-stdin"
+                        sh 'docker push ${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:${BUILD_ID}'
             }
+            sh 'docker logout'
         }
     }
+}
 }
